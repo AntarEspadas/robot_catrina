@@ -6,7 +6,7 @@ enum State {
 }
 
 #[repr(packed)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FaceTrackerData {
     pub timestamp: f64,
     pub face_id: i32,
@@ -47,12 +47,19 @@ where
     pub on_timeout: TimeoutCallback,
 }
 
-impl<DataCallback, FaceLostCallback, TimeoutCallback> FaceTracker<DataCallback, FaceLostCallback, TimeoutCallback>
+impl<DataCallback, FaceLostCallback, TimeoutCallback>
+    FaceTracker<DataCallback, FaceLostCallback, TimeoutCallback>
 where
     DataCallback: FnMut(&FaceTrackerData),
     FaceLostCallback: FnMut(),
-    TimeoutCallback: FnMut(), {
-    pub fn new(address: &str, on_data: DataCallback, on_face_lost: FaceLostCallback, on_timeout: TimeoutCallback) -> Self {
+    TimeoutCallback: FnMut(),
+{
+    pub fn new(
+        address: &str,
+        on_data: DataCallback,
+        on_face_lost: FaceLostCallback,
+        on_timeout: TimeoutCallback,
+    ) -> Self {
         let socket = std::net::UdpSocket::bind(address).expect("Unable to connect");
         socket.set_nonblocking(false).unwrap();
         socket
@@ -91,7 +98,9 @@ where
     }
 
     fn handle_err(&mut self, error: &Error) {
-        if error.kind() != std::io::ErrorKind::TimedOut && error.kind() != std::io::ErrorKind::WouldBlock {
+        if error.kind() != std::io::ErrorKind::TimedOut
+            && error.kind() != std::io::ErrorKind::WouldBlock
+        {
             panic!("{error:?}");
         }
         match self.state {
