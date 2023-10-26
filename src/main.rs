@@ -2,6 +2,7 @@ pub mod animator;
 pub mod arduino;
 pub mod catrina;
 pub mod face_tracker;
+pub mod sound;
 
 use std::{error::Error, sync::Arc, thread, time::Duration};
 
