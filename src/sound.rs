@@ -4,6 +4,8 @@ use std::{
     thread,
 };
 
+use rand::seq::SliceRandom;
+
 use soloud::*;
 
 enum PlayerMessage {
@@ -13,15 +15,16 @@ enum PlayerMessage {
 
 pub struct Player {
     sender: Sender<PlayerMessage>,
+    base_path: PathBuf,
 }
 
 impl Player {
-    pub fn new() -> Self {
+    pub fn new(base_path: PathBuf) -> Self {
         let (sender, receiver) = std::sync::mpsc::channel();
         thread::spawn(move || {
             Self::main_loop(receiver);
         });
-        Self { sender }
+        Self { sender, base_path }
     }
 
     pub fn start() {}
@@ -32,6 +35,19 @@ impl Player {
 
     pub fn stop(&self) {
         self.sender.send(PlayerMessage::Stop).unwrap();
+    }
+
+    pub fn play_random(&self, folder_path: PathBuf) {
+        let folder_path = self.base_path.join(folder_path);
+
+        let mut rng = rand::thread_rng();
+        let paths: Vec<_> = std::fs::read_dir(folder_path)
+            .unwrap()
+            .map(|entry| entry.unwrap().path())
+            .filter(|path| path.extension().unwrap() == "wav")
+            .collect();
+        let path = paths.choose(&mut rng).unwrap().to_owned();
+        self.play(path);
     }
 
     fn main_loop(receiver: Receiver<PlayerMessage>) {
@@ -53,11 +69,5 @@ impl Player {
                 }
             }
         }
-    }
-}
-
-impl Default for Player {
-    fn default() -> Self {
-        Self::new()
     }
 }

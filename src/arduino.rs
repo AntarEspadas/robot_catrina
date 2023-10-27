@@ -6,8 +6,6 @@ use std::{
 
 use serialport::SerialPort;
 
-use crate::animator::Animator;
-
 pub struct Arduino {
     port: Mutex<Box<dyn SerialPort>>,
 }
@@ -56,8 +54,4 @@ impl Arduino {
     //         start = *angle;
     //     }
     // }
-
-    pub fn animate(&self, pin: u8) -> Animator {
-        Animator::new(self, pin)
-    }
 }

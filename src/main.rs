@@ -16,12 +16,22 @@ const SERIAL_PORT: &str = "/dev/ttyUSB0";
 fn main() -> Result<(), Box<dyn Error>> {
     let arduino = Arduino::new(SERIAL_PORT);
 
-    let catrina = Catrina::new(arduino, 0.7, 0.5, Pins { neck: 4 });
+    let pins = Pins {
+        neck: 9,
+        pivot: 5,
+        left_shoulder: 3,
+        left_elbow: 4,
+        left_wrist: 8,
+    };
+
+    let player = sound::Player::new("/home/rpi/Music/catrina".into());
+
+    let catrina = Catrina::new(arduino, player, 0.7, 0.5, pins);
     let catrina = Arc::new(catrina);
 
     thread::sleep(Duration::from_secs(1));
 
-    catrina.arduino.write(3, 90);
+    catrina.animators.left_shoulder.set_smooth(90, 1.0);
 
     let catrina_clone = Arc::clone(&catrina);
 
@@ -32,49 +42,36 @@ fn main() -> Result<(), Box<dyn Error>> {
             || catrina_clone.handle_face_lost(),
             || catrina_clone.handle_timeout(),
         );
-        // tracker.start();
+        tracker.start();
     });
 
-    // catrina.main_loop();
-
-    let duration = Duration::from_secs_f32(0.75);
-
-    loop {
-        let catrina1 = Arc::clone(&catrina);
-        let catrina2 = Arc::clone(&catrina);
-
-        catrina1
-            .arduino
-            .animate(5)
-            .start_angle(90)
-            .to(0, 0.75)
-            .sleep(0.75)
-            .to(180, 0.75)
-            .sleep(0.75)
-            .to(90, 0.75)
-            .sleep(0.75);
-
-        // let handle1 = thread::spawn(move || {
-        // catrina1
-        //     .arduino
-        //     .animate(5, 90, &[(duration, 0), (duration, 180), (duration, 90)])
-        // catrina1.arduino.write_smooth(5, 90, 0, duration);
-        // catrina1.arduino.write_smooth(5, 0, 180, duration);
-        // catrina1.arduino.write_smooth(5, 180, 90, duration);
-        // });
-
-        // let handle2 = thread::spawn(move || {
-        //     catrina2
-        //         .arduino
-        //         .animate(6, 90, &[(duration, 0), (duration * 2, 90)]);
-        //     // catrina2.arduino.write_smooth(6, 90, 180, duration);
-        //     // catrina2.arduino.write_smooth(6, 180, 45, duration);
-        //     // catrina2.arduino.write_smooth(6, 45, 90, duration);
-        // });
-
-        // handle1.join().unwrap();
-        // handle2.join().unwrap();
-    }
+    catrina.main_loop();
 
     Ok(())
+}
+
+fn motion_test(catrina: &Arc<Catrina>) {
+    let catrina1 = Arc::clone(catrina);
+    let catrina2 = Arc::clone(catrina);
+
+    let handle1 = thread::spawn(move || {
+        catrina1
+            .animators
+            .left_shoulder
+            .set_smooth(135, 0.75)
+            .sleep(0.5)
+            .set_smooth(180, 0.75);
+    });
+
+    let handle2 = thread::spawn(move || {
+        catrina2
+            .animators
+            .left_elbow
+            .set_smooth(135, 0.75)
+            .sleep(0.5)
+            .set_smooth(0, 0.75);
+    });
+
+    handle1.join().unwrap();
+    handle2.join().unwrap();
 }
