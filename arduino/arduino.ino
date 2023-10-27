@@ -33,7 +33,10 @@ void loop() {
       servos[i].write(value);
     }
     else if (i >= SERVO_COUNT) {
-      digitalWrite(pin, value);
+      if (value == 0)
+        digitalWrite(pin, LOW);
+      else
+        digitalWrite(pin, HIGH);
     }
     else {
       // Error Message
