@@ -20,8 +20,8 @@ impl Arduino {
         Self { port: serial_port }
     }
 
-    pub fn write(&self, pin: u8, angle: u8) -> Duration {
-        let out_buf = [pin, angle];
+    pub fn write(&self, pin: u8, value: u8) -> Duration {
+        let out_buf = [pin, value];
         let mut port = self.port.lock().unwrap();
         let start = std::time::Instant::now();
         port.write_all(&out_buf)
@@ -38,9 +38,9 @@ impl Arduino {
         let increment = (end as f32 - start as f32) / steps as f32;
         let wait_interval = Duration::from_millis(10);
         for i in 0..steps {
-            let angle = start as f32 + increment * i as f32;
-            let angle = angle as u8;
-            let time_taken = self.write(pin, angle);
+            let value = start as f32 + increment * i as f32;
+            let value = value as u8;
+            let time_taken = self.write(pin, value);
             if time_taken < wait_interval {
                 thread::sleep(wait_interval - time_taken);
             }

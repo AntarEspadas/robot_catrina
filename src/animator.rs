@@ -9,96 +9,96 @@ use crate::arduino::Arduino;
 pub struct Animator {
     arduino: Arc<Arduino>,
     pin: u8,
-    angle: Mutex<u8>,
+    value: Mutex<u8>,
 }
 
 impl Animator {
     pub fn new(arduino: &Arc<Arduino>, pin: u8) -> Self {
         let arduino = Arc::clone(arduino);
-        let start_angle = if pin % 2 == 0 { 0 } else { 180 };
+        let start_value = if pin % 2 == 0 { 0 } else { 180 };
         Self {
             arduino,
             pin,
-            angle: Mutex::new(start_angle),
+            value: Mutex::new(start_value),
         }
     }
 
-    pub fn angle(&self) -> u8 {
-        *self.angle.lock().unwrap()
+    pub fn value(&self) -> u8 {
+        *self.value.lock().unwrap()
     }
 
-    pub fn set_smooth(&self, angle: u8, seconds: f32) -> &Self {
-        let mut self_angle = self.angle.lock().unwrap();
+    pub fn set_smooth(&self, value: u8, seconds: f32) -> &Self {
+        let mut self_value = self.value.lock().unwrap();
         self.arduino.write_smooth(
             self.pin,
-            *self_angle,
-            angle,
+            *self_value,
+            value,
             Duration::from_secs_f32(seconds),
         );
-        *self_angle = angle;
+        *self_value = value;
         self
     }
 
-    pub fn set(&self, angle: u8) -> &Self {
-        let mut self_angle = self.angle.lock().unwrap();
-        self.arduino.write(self.pin, angle);
-        *self_angle = angle;
+    pub fn set(&self, value: u8) -> &Self {
+        let mut self_value = self.value.lock().unwrap();
+        self.arduino.write(self.pin, value);
+        *self_value = value;
         self
     }
 
     pub fn increment(&self, value: u8) -> &Self {
-        let mut self_angle = self.angle.lock().unwrap();
-        if *self_angle <= 180 - value {
-            *self_angle += value;
+        let mut self_value = self.value.lock().unwrap();
+        if *self_value <= 180 - value {
+            *self_value += value;
         } else {
-            *self_angle = 180;
+            *self_value = 180;
         }
-        self.arduino.write(self.pin, *self_angle);
+        self.arduino.write(self.pin, *self_value);
         self
     }
 
     pub fn decrement(&self, value: u8) -> &Self {
-        let mut self_angle = self.angle.lock().unwrap();
-        if *self_angle >= value {
-            *self_angle -= value;
+        let mut self_value = self.value.lock().unwrap();
+        if *self_value >= value {
+            *self_value -= value;
         } else {
-            *self_angle = 0;
+            *self_value = 0;
         }
-        self.arduino.write(self.pin, *self_angle);
+        self.arduino.write(self.pin, *self_value);
         self
     }
 
     pub fn increment_smooth(&self, value: u8, seconds: f32) -> &Self {
-        let mut self_angle = self.angle.lock().unwrap();
-        let angle = if *self_angle <= 180 - value {
-            *self_angle + value
+        let mut self_value = self.value.lock().unwrap();
+        let value = if *self_value <= 180 - value {
+            *self_value + value
         } else {
             180
         };
         self.arduino.write_smooth(
             self.pin,
-            *self_angle,
-            angle,
+            *self_value,
+            value,
             Duration::from_secs_f32(seconds),
         );
-        *self_angle = angle;
+        *self_value = value;
         self
     }
 
     pub fn decrement_smooth(&self, value: u8, seconds: f32) -> &Self {
-        let mut self_angle = self.angle.lock().unwrap();
-        let angle = if *self_angle >= value {
-            *self_angle - value
+        let mut self_value = self.value.lock().unwrap();
+        let value = if *self_value >= value {
+            *self_value - value
         } else {
             0
         };
         self.arduino.write_smooth(
             self.pin,
-            *self_angle,
-            angle,
+            *self_value,
+            value,
             Duration::from_secs_f32(seconds),
         );
-        *self_angle = angle;
+        *self_value = value;
         self
     }
 

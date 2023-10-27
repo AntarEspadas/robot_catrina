@@ -4,10 +4,15 @@ pub mod catrina;
 pub mod face_tracker;
 pub mod sound;
 
-use std::{error::Error, sync::Arc, thread, time::Duration};
+use std::{
+    error::Error,
+    sync::Arc,
+    thread::{self, sleep, Thread},
+    time::Duration,
+};
 
 use arduino::Arduino;
-use catrina::{Catrina, Pins};
+use catrina::{animation::Animation, Catrina, Pins};
 use face_tracker::FaceTracker;
 
 const ADDRESS: &str = "127.0.0.1:11573";
@@ -22,6 +27,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         left_shoulder: 3,
         left_elbow: 4,
         left_wrist: 8,
+        leds: 12,
     };
 
     let player = sound::Player::new("/home/rpi/Music/catrina".into());
@@ -31,7 +37,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     thread::sleep(Duration::from_secs(1));
 
-    catrina.animators.left_shoulder.set_smooth(90, 1.0);
+    motion_test(&catrina);
 
     let catrina_clone = Arc::clone(&catrina);
 
@@ -45,33 +51,27 @@ fn main() -> Result<(), Box<dyn Error>> {
         tracker.start();
     });
 
-    catrina.main_loop();
+    // catrina.main_loop();
 
     Ok(())
 }
 
-fn motion_test(catrina: &Arc<Catrina>) {
-    let catrina1 = Arc::clone(catrina);
-    let catrina2 = Arc::clone(catrina);
+fn motion_test(catrina: &Catrina) {
+    loop {
+        catrina.animators.leds.set(1);
+        std::thread::sleep(Duration::from_secs(1));
+        catrina.animators.leds.set(0);
+        std::thread::sleep(Duration::from_secs(1));
+    }
+    // Animation::play_parallel(vec![
+    //     catrina.raise_left_shoulder(),
+    //     catrina.raise_left_elbow(),
+    // ]);
 
-    let handle1 = thread::spawn(move || {
-        catrina1
-            .animators
-            .left_shoulder
-            .set_smooth(135, 0.75)
-            .sleep(0.5)
-            .set_smooth(180, 0.75);
-    });
+    // thread::sleep(Duration::from_secs_f32(0.5));
 
-    let handle2 = thread::spawn(move || {
-        catrina2
-            .animators
-            .left_elbow
-            .set_smooth(135, 0.75)
-            .sleep(0.5)
-            .set_smooth(0, 0.75);
-    });
-
-    handle1.join().unwrap();
-    handle2.join().unwrap();
+    // Animation::play_parallel(vec![
+    //     catrina.lower_left_shoulder(),
+    //     catrina.lower_left_elbow(),
+    // ]);
 }

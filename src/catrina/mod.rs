@@ -1,3 +1,6 @@
+pub mod animation;
+pub mod animations;
+
 use std::sync::{Arc, Mutex};
 
 use crate::{animator::Animator, arduino::Arduino, face_tracker::FaceTrackerData, sound::Player};
@@ -10,21 +13,23 @@ enum State {
 }
 
 pub struct Animators {
-    pub neck: Animator,
-    pub pivot: Animator,
-    pub left_shoulder: Animator,
-    pub left_elbow: Animator,
-    pub left_wrist: Animator,
+    pub neck: Arc<Animator>,
+    pub pivot: Arc<Animator>,
+    pub left_shoulder: Arc<Animator>,
+    pub left_elbow: Arc<Animator>,
+    pub left_wrist: Arc<Animator>,
+    pub leds: Arc<Animator>,
 }
 
 impl Animators {
     fn new(arduino: &Arc<Arduino>, pins: Pins) -> Self {
         Self {
-            neck: Animator::new(arduino, pins.neck),
-            pivot: Animator::new(arduino, pins.pivot),
-            left_shoulder: Animator::new(arduino, pins.left_shoulder),
-            left_elbow: Animator::new(arduino, pins.left_elbow),
-            left_wrist: Animator::new(arduino, pins.left_wrist),
+            neck: Arc::new(Animator::new(arduino, pins.neck)),
+            pivot: Arc::new(Animator::new(arduino, pins.pivot)),
+            left_shoulder: Arc::new(Animator::new(arduino, pins.left_shoulder)),
+            left_elbow: Arc::new(Animator::new(arduino, pins.left_elbow)),
+            left_wrist: Arc::new(Animator::new(arduino, pins.left_wrist)),
+            leds: Arc::new(Animator::new(arduino, pins.leds)),
         }
     }
 }
@@ -35,6 +40,7 @@ pub struct Pins {
     pub left_shoulder: u8,
     pub left_elbow: u8,
     pub left_wrist: u8,
+    pub leds: u8,
 }
 
 pub struct Catrina {
@@ -88,6 +94,7 @@ impl Catrina {
         let mut state = self.state.lock().unwrap();
         if let State::Idle { frame: _ } = *state {
             self.player.play_random("tracking".into());
+            self.animators.leds.set(1);
         }
         *state = State::Tracking { data: data.clone() };
     }
@@ -98,7 +105,11 @@ impl Catrina {
     }
 
     pub fn handle_face_lost(&self) {
+        if let State::Idle { frame: _ } = *self.state.lock().unwrap() {
+            return;
+        }
         *self.state.lock().unwrap() = State::FaceLost;
+        self.animators.leds.set(0);
     }
 
     fn move_neck(&self, data: &FaceTrackerData) {
