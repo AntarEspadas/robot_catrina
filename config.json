@@ -1,0 +1,13 @@
+{
+  "arduinoSerialPort": "/dev/ttyACM0",
+  "openSeeFaceAddress": "127.0.0.1:11573",
+  "audioFolder": null,
+  "pins": {
+    "neck": 9,
+    "pivot": 5,
+    "leds": 12,
+    "leftShoulder": 3,
+    "leftElbow": 4,
+    "leftWrist": 8
+  }
+}

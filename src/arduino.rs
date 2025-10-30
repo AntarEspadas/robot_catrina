@@ -1,6 +1,6 @@
 use std::{
     sync::Mutex,
-    thread::{self},
+    thread::{self, sleep},
     time::Duration,
 };
 
@@ -11,11 +11,31 @@ pub struct Arduino {
 }
 
 impl Arduino {
-    pub fn new(port: &str) -> Self {
-        let serial_port = serialport::new(port, 9600)
-            .timeout(std::time::Duration::from_millis(1000))
-            .open()
-            .expect("Unable to open serial port");
+    pub fn connect(port: &str) -> Self {
+        println!("Intentando conectar al puerto serial {port}...");
+        let serial_port = loop {
+            let result = serialport::new(port, 9600)
+                .timeout(std::time::Duration::from_secs(2))
+                .open();
+            match result {
+                Ok(port) => {
+                    println!("Conectado!");
+                    break port;
+                }
+                // Err(err) => println!(
+                //     "Error: {}.\nUnable to connect to serial port {port}, retrying...",
+                //     err.description
+                // ),
+                Err(err) => {
+                    println!("Error: {}", err.description);
+                    if let serialport::ErrorKind::Io(std::io::ErrorKind::NotFound) = err.kind {
+                        println!("Asegúrese de que el Arduino está conectado y su puerto configurado correctamente en config.json (ej. /dev/ttyUSB0, /dev/ttyUSB1, /dev/ttyACM0, etc.)")
+                    }
+                }
+            }
+            println!("Reintentando conectar al puerto {port}...");
+            sleep(Duration::from_secs(1));
+        };
         let serial_port = Mutex::new(serial_port);
         Self { port: serial_port }
     }

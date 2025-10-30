@@ -3,6 +3,8 @@ pub mod animations;
 
 use std::sync::{Arc, Mutex};
 
+use serde::Deserialize;
+
 use crate::{animator::Animator, arduino::Arduino, face_tracker::FaceTrackerData, sound::Player};
 
 #[derive(Clone)]
@@ -34,6 +36,8 @@ impl Animators {
     }
 }
 
+#[derive(Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct Pins {
     pub neck: u8,
     pub pivot: u8,

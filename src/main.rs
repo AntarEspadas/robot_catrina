@@ -1,38 +1,31 @@
 pub mod animator;
 pub mod arduino;
 pub mod catrina;
+pub mod config;
 pub mod face_tracker;
 pub mod sound;
 
 use std::{
     error::Error,
     sync::Arc,
-    thread::{self, sleep, Thread},
+    thread::{self},
     time::Duration,
 };
 
 use arduino::Arduino;
-use catrina::{animation::Animation, Catrina, Pins};
+use catrina::Catrina;
 use face_tracker::FaceTracker;
 
-const ADDRESS: &str = "127.0.0.1:11573";
-const SERIAL_PORT: &str = "/dev/ttyUSB0";
+use crate::config::read_config_from_file;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let arduino = Arduino::new(SERIAL_PORT);
+    let config = read_config_from_file("./config.json")?;
 
-    let pins = Pins {
-        neck: 9,
-        pivot: 5,
-        left_shoulder: 3,
-        left_elbow: 4,
-        left_wrist: 8,
-        leds: 12,
-    };
+    let arduino = Arduino::connect(&config.arduino_serial_port);
 
-    let player = sound::Player::new("/home/rpi/Music/catrina".into());
+    let player = sound::Player::create(config.audio_folder);
 
-    let catrina = Catrina::new(arduino, player, 0.7, 0.5, pins);
+    let catrina = Catrina::new(arduino, player, 0.7, 0.5, config.pins.clone());
     let catrina = Arc::new(catrina);
 
     thread::sleep(Duration::from_secs(1));
@@ -43,7 +36,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     thread::spawn(move || {
         let mut tracker = FaceTracker::new(
-            ADDRESS,
+            &config.open_see_face_address,
             |data| catrina_clone.handle_face_tracker_data(data),
             || catrina_clone.handle_face_lost(),
             || catrina_clone.handle_timeout(),

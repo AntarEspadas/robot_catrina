@@ -15,11 +15,11 @@ enum PlayerMessage {
 
 pub struct Player {
     sender: Sender<PlayerMessage>,
-    base_path: PathBuf,
+    base_path: Option<PathBuf>,
 }
 
 impl Player {
-    pub fn new(base_path: PathBuf) -> Self {
+    pub fn create(base_path: Option<PathBuf>) -> Self {
         let (sender, receiver) = std::sync::mpsc::channel();
         thread::spawn(move || {
             Self::main_loop(receiver);
@@ -27,18 +27,21 @@ impl Player {
         Self { sender, base_path }
     }
 
-    pub fn start() {}
-
-    pub fn play(&self, path: PathBuf) {
-        self.sender.send(PlayerMessage::Play(path)).unwrap();
-    }
-
     pub fn stop(&self) {
         self.sender.send(PlayerMessage::Stop).unwrap();
     }
 
     pub fn play_random(&self, folder_path: PathBuf) {
-        let folder_path = self.base_path.join(folder_path);
+        if self.base_path.is_none() {
+            println!(
+                "Ignorando reproducción de audio porque la carpeta de audio no está configurada"
+            );
+            return;
+        }
+
+        let base_path = self.base_path.as_ref().unwrap();
+
+        let folder_path = base_path.join(folder_path);
 
         let mut rng = rand::thread_rng();
         let paths: Vec<_> = std::fs::read_dir(folder_path)
@@ -48,6 +51,10 @@ impl Player {
             .collect();
         let path = paths.choose(&mut rng).unwrap().to_owned();
         self.play(path);
+    }
+
+    fn play(&self, path: PathBuf) {
+        self.sender.send(PlayerMessage::Play(path)).unwrap();
     }
 
     fn main_loop(receiver: Receiver<PlayerMessage>) {
