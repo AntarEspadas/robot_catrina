@@ -30,7 +30,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     thread::sleep(Duration::from_secs(1));
 
-    motion_test(&catrina);
+    // motion_test(&catrina);
 
     let catrina_clone = Arc::clone(&catrina);
 
@@ -44,7 +44,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         tracker.start();
     });
 
-    // catrina.main_loop();
+    catrina.main_loop();
 
     Ok(())
 }
